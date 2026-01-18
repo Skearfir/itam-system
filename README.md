@@ -43,7 +43,7 @@ Small IT teams (1-5 people) managing:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/itam-system.git
+git clone https://github.com/skearfir/itam-system.git
 cd itam-system
 
 # Create virtual environment
