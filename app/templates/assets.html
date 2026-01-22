@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - ITAM System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Asset Inventory</h2>
+    <div class="page-actions">
+        <button class="btn btn-primary">+ Add New Asset</button>
+    </div>
+</div>
+
+<div class="stats-cards">
+    <div class="stat-card">
+        <h3>{{ total_assets }}</h3>
+        <p>Total Assets</p>
+    </div>
+    <div class="stat-card stat-success">
+        <h3>{{ stock_count }}</h3>
+        <p>In Stock</p>
+    </div>
+    <div class="stat-card stat-warning">
+        <h3>{{ assigned_count }}</h3>
+        <p>Assigned</p>
+    </div>
+    <div class="stat-card stat-danger">
+        <h3>{{ faulty_count }}</h3>
+        <p>Faulty</p>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Service Tag</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+                <th>Location</th>
+                <th>Warranty Expiry</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td class="service-tag">
+                    <a href="{{ url_for('main.asset_detail', service_tag=asset.service_tag) }}">
+                        {{ asset.service_tag }}
+                    </a>
+                </td>
+                <td>{{ asset.brand }}</td>
+                <td>{{ asset.model }}</td>
+                <td>
+                    <span class="status-badge status-{{ asset.current_status|lower|replace(' ', '-') }}">
+                        {{ asset.current_status }}
+                    </span>
+                </td>
+                <td>
+                    {% if asset.current_assignment %}
+                        {{ asset.current_assignment.user.full_name }}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if asset.in_house %}
+                        {% if asset.storage_location %}
+                            {{ asset.storage_location }}
+                        {% else %}
+                            <span class="text-muted">In House</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">Deployed</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if asset.warranty_expiry %}
+                        {{ asset.warranty_expiry.strftime('%Y-%m-%d') }}
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm">View</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

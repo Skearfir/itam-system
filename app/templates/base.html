@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ITAM System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>ITAM System</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('main.index') }}" class="nav-link">Dashboard</a></li>
+                <li><a href="{{ url_for('main.assets') }}" class="nav-link">Assets</a></li>
+                <li><a href="{{ url_for('main.users') }}" class="nav-link">Users</a></li>
+                <li><a href="#" class="nav-link">Assignments</a></li>
+                <li><a href="#" class="nav-link">History</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>ITAM System v0.1 | Built with domain expertise</p>
+    </footer>
+</body>
+</html>

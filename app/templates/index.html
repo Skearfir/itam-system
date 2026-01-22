@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ITAM System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">💼</div>
+        <h3>{{ total_assets }}</h3>
+        <p>Total Assets</p>
+    </div>
+    <div class="stat-card stat-success">
+        <div class="stat-icon">✅</div>
+        <h3>{{ stock_count }}</h3>
+        <p>Available in Stock</p>
+    </div>
+    <div class="stat-card stat-info">
+        <div class="stat-icon">👥</div>
+        <h3>{{ active_users }}</h3>
+        <p>Active Users</p>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">⚙️</div>
+        <h3>{{ assigned_count }}</h3>
+        <p>Currently Assigned</p>
+    </div>
+    <div class="stat-card stat-danger">
+        <div class="stat-icon">⚠️</div>
+        <h3>{{ faulty_count }}</h3>
+        <p>Faulty Machines</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <h3>{{ reserved_count }}</h3>
+        <p>Reserved</p>
+    </div>
+</div>
+
+<div class="dashboard-sections">
+    <div class="dashboard-card">
+        <h3>Recent Activity</h3>
+        <div class="activity-list">
+            {% for event in recent_events %}
+            <div class="activity-item">
+                <span class="activity-date">{{ event.event_date.strftime('%Y-%m-%d') }}</span>
+                <span class="activity-type">{{ event.event_type }}</span>
+                <span class="activity-details">{{ event.service_tag }} - {{ event.notes[:50] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Alerts</h3>
+        <div class="alert-list">
+            {% if faulty_machines %}
+                {% for machine in faulty_machines %}
+                <div class="alert-item alert-danger">
+                    <strong>{{ machine.service_tag }}</strong> - Faulty since {{ machine.faulty_since_date.strftime('%Y-%m-%d') }}
+                    <br><small>{{ machine.faulty_sub_status }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No active alerts</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="action-buttons">
+        <a href="{{ url_for('main.assets') }}" class="btn btn-primary">View All Assets</a>
+        <button class="btn btn-secondary">Add New Asset</button>
+        <button class="btn btn-secondary">Assign Machine</button>
+        <button class="btn btn-secondary">Mark as Faulty</button>
+    </div>
+</div>
+{% endblock %}
