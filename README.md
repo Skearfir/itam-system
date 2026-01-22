@@ -1,10 +1,8 @@
 # ITAM - IT Asset Management System
 
-Open source IT asset management for small teams.
+Open source IT asset management for small IT teams.
 
 ## Why This Exists
-
-Enterprise asset management software costs $20k-100k/year. That's ridiculous for small teams managing 10-500 machines. 
 
 I built this because I got tired of managing 550+ laptops in Excel.
 
@@ -88,7 +86,7 @@ Target: Working system by Q2 2026
 - [ ] Active Directory sync
 - [ ] Intune compliance checking
 - [ ] Email notifications
-- [ ] Dell warranty API
+- [ ] Brand warranty API
 
 **Phase 4: Advanced Features**
 - [ ] Multi-tenant support
@@ -124,8 +122,8 @@ Built by someone who actually does IT asset management for a living.
 > "If someone wants to do it themselves... sure... money shouldn't stop you."
 
 - Core software: **Free forever** (open source)
-- Installation help: Available as consulting
-- Customization: Available as consulting
+- Installation help: (coming later)
+- Customization: (coming later)
 - Hosting: DIY or use our hosted version (coming later)
 
-Everyone deserves good tools. Build it yourself, or hire me to help. Your choice.
+Everyone deserves good tools. 
