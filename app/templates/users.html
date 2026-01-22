@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Users - ITAM System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Users / Employees</h2>
+    <div class="page-actions">
+        <button class="btn btn-primary">+ Add New User</button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Hire Date</th>
+                <th>Active Assignments</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.employee_id }}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.department_ref.name }}</td>
+                <td>{{ user.date_of_hire.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <span class="badge">{{ user.active_assignments_count }}</span>
+                </td>
+                <td>
+                    <span class="status-badge status-{{ user.employment_status|lower }}">
+                        {{ user.employment_status }}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm">View</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

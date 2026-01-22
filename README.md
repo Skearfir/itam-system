@@ -12,7 +12,7 @@ I built this because I got tired of managing 550+ laptops in Excel.
 
 **Money shouldn't stop you** from having good tools.
 
-## Features
+## [Future] Features
 
 - ✅ Machine inventory (Dell, Lenovo, Chromebook, etc.)
 - ✅ User management (link to employees)
