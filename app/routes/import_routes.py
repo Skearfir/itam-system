@@ -182,6 +182,8 @@ def upload_file():
 
 @import_bp.route('/import/process', methods=['POST'])
 def process_import():
+    raise Exception("TEST ERROR - DELETE THIS LINE")
+
     print("!!! ROUTE HIT !!!")
 
     # Debug: Print ALL session data
