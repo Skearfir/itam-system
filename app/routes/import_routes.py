@@ -182,34 +182,22 @@ def upload_file():
 
 @import_bp.route('/import/process', methods=['POST'])
 def process_import():
-    print("!!! ROUTE HIT !!!")
-
-    # Debug: Print ALL session data
-    print(f"Session contents: {dict(session)}")
+    """Process the mapped import"""
+    print("=== IMPORT PROCESS STARTED ===", flush=True)
 
     filepath = session.get('import_filepath')
-    print(f"Filepath: {filepath}")
+    print(f"Filepath from session: {filepath}", flush=True)
+    print(f"Session contents: {dict(session)}", flush=True)
 
     if filepath:
-        print(f"File exists check: {os.path.exists(filepath)}")
+        print(f"File exists check: {os.path.exists(filepath)}", flush=True)
 
     if not filepath or not os.path.exists(filepath):
-        print("REDIRECTING - filepath missing or file not found")
+        print("REDIRECTING - filepath missing or file not found", flush=True)
         flash('Session expired. Please upload file again.', 'error')
         return redirect(url_for('import_bp.import_page'))
 
-    """Process the mapped import"""
-    print("=== IMPORT PROCESS STARTED ===")
-
-    filepath = session.get('import_filepath')
-    print(f"Filepath from session: {filepath}")
-
-    if not filepath or not os.path.exists(filepath):
-        print(f"FILE NOT FOUND OR SESSION EMPTY!")
-        flash('Session expired. Please upload file again.', 'error')
-        return redirect(url_for('import_bp.import_page'))
-
-    print(f"File exists, reading...")
+    print("File exists, reading...", flush=True)
 
     # Read file again
     if filepath.endswith('.csv'):
@@ -217,7 +205,7 @@ def process_import():
     else:
         df = pd.read_excel(filepath)
 
-    print(f"File read successfully, {len(df)} rows")
+    print(f"File read successfully, {len(df)} rows", flush=True)
 
     # Get mapping from form (using sanitized column names)
     mapping = {}
