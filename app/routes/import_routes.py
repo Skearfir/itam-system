@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 import pandas as pd
 import os
+import re
 from werkzeug.utils import secure_filename
 from app import db
 from app.models import Asset, User, Department, Assignment, HistoryEvent
@@ -14,6 +15,11 @@ UPLOAD_FOLDER = 'uploads'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def sanitize_column_name(col):
+    """Make column name safe for HTML form fields"""
+    return re.sub(r'[^a-zA-Z0-9_]', '_', str(col))
 
 
 def parse_date(value):
@@ -162,8 +168,12 @@ def upload_file():
     # Preview first 5 rows
     preview_data = df.head(5).fillna('').to_dict('records')
 
+    # Create safe column mapping for form fields
+    column_mapping = {col: sanitize_column_name(col) for col in columns}
+
     return render_template('import_mapping.html',
                            columns=columns,
+                           column_mapping=column_mapping,
                            itam_fields=itam_fields,
                            auto_mapping=auto_mapping,
                            preview_data=preview_data,
@@ -193,15 +203,19 @@ def process_import():
 
     print(f"File read successfully, {len(df)} rows")
 
-    # Get mapping from form
+    # Get mapping from form (using sanitized column names)
     mapping = {}
     for col in df.columns:
-        field = request.form.get(f'mapping_{col}')
+        safe_col = sanitize_column_name(col)
+        field = request.form.get(f'mapping_{safe_col}')
         if field and field != 'skip':
             mapping[col] = field
 
+    print(f"Mapping: {mapping}")
+
     # Check required field
     if 'service_tag' not in mapping.values():
+        print("ERROR: No service_tag mapping found!")
         flash('Service Tag mapping is required!', 'error')
         return redirect(url_for('import_bp.import_page'))
 
@@ -367,8 +381,10 @@ def process_import():
     # Commit all changes
     try:
         db.session.commit()
+        print("Database commit successful!")
     except Exception as e:
         db.session.rollback()
+        print(f"Database error: {str(e)}")
         flash(f'Database error: {str(e)}', 'error')
         return redirect(url_for('import_bp.import_page'))
 
@@ -391,10 +407,9 @@ def process_import():
 @import_bp.route('/import/template')
 def download_template():
     """Download a CSV template"""
-    import io
     from flask import Response
 
-    template_data = """Service Tag,Brand,Model,Hostname,GEP Asset Tag,US Asset Tag,Status,Warranty Expiry,Assigned To,Employee ID,Department,Assignment Date,RAM,Storage,Processor,Notes
+    template_data = """Service Tag,Brand,Model,Hostname,Local Asset Tag,International Asset Tag,Status,Warranty Expiry,Assigned To,Employee ID,Department,Assignment Date,RAM,Storage,Processor,Notes
 ABC12345,Dell,Latitude 7440,SJO-ABC12345,1408-0001,US001,Permanent,2027-01-15,John Smith,EMP001,IT Department,2024-01-15,16,512GB SSD,Intel i7,New hire machine
 XYZ67890,Lenovo,ThinkPad X1,SJO-XYZ67890,1408-0002,,Stock,2026-08-20,,,,,16,256GB SSD,Intel i5,Ready for deployment
 """
