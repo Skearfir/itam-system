@@ -182,6 +182,22 @@ def upload_file():
 
 @import_bp.route('/import/process', methods=['POST'])
 def process_import():
+    print("!!! ROUTE HIT !!!")
+
+    # Debug: Print ALL session data
+    print(f"Session contents: {dict(session)}")
+
+    filepath = session.get('import_filepath')
+    print(f"Filepath: {filepath}")
+
+    if filepath:
+        print(f"File exists check: {os.path.exists(filepath)}")
+
+    if not filepath or not os.path.exists(filepath):
+        print("REDIRECTING - filepath missing or file not found")
+        flash('Session expired. Please upload file again.', 'error')
+        return redirect(url_for('import_bp.import_page'))
+
     """Process the mapped import"""
     print("=== IMPORT PROCESS STARTED ===")
 
