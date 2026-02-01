@@ -28,7 +28,7 @@
                         <td><strong>{{ col }}</strong></td>
                         <td>→</td>
                         <td>
-                            <select name="mapping_{{ column_mapping[col] }}" class="mapping-select">
+                            <select name="mapping_{{ col }}" class="mapping-select">
                                 {% for field in itam_fields %}
                                 <option value="{{ field.name }}" 
                                     {% if auto_mapping.get(col) == field.name %}selected{% endif %}>
