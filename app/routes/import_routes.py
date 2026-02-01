@@ -425,6 +425,12 @@ def download_template():
     """Download a CSV template"""
     from flask import Response
 
+@import_bp.route('/import/test', methods=['GET', 'POST'])
+def test_route():
+    print("TEST ROUTE HIT!")
+    return "Test route works! Method: " + request.method
+
+
     template_data = """Service Tag,Brand,Model,Hostname,Local Asset Tag,International Asset Tag,Status,Warranty Expiry,Assigned To,Employee ID,Department,Assignment Date,RAM,Storage,Processor,Notes
 ABC12345,Dell,Latitude 7440,SJO-ABC12345,1408-0001,US001,Permanent,2027-01-15,John Smith,EMP001,IT Department,2024-01-15,16,512GB SSD,Intel i7,New hire machine
 XYZ67890,Lenovo,ThinkPad X1,SJO-XYZ67890,1408-0002,,Stock,2026-08-20,,,,,16,256GB SSD,Intel i5,Ready for deployment
