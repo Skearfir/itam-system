@@ -94,8 +94,11 @@ def upload_file():
         {'name': 'brand', 'label': 'Brand/Make'},
         {'name': 'model', 'label': 'Model'},
         {'name': 'hostname', 'label': 'Hostname'},
-        {'name': 'company_asset_tag', 'label': 'Primary Asset Tag (e.g., GEP Tag)'},
-        {'name': 'secondary_asset_tag', 'label': 'Secondary Asset Tag (e.g., US Tag)'},
+        {'name': 'country', 'label': 'Country'},
+        {'name': 'city', 'label': 'City'},
+        {'name': 'location_code', 'label': 'Location/Office Code (SJO, NYC, etc.)'},
+        {'name': 'company_asset_tag', 'label': 'Primary Asset Tag (e.g., Local Tag)'},
+        {'name': 'secondary_asset_tag', 'label': 'Secondary Asset Tag (e.g., International Tag)'},
         {'name': 'current_status', 'label': 'Status (Permanent/Stock/Faulty/etc.)'},
         {'name': 'warranty_expiry', 'label': 'Warranty Expiry Date'},
         {'name': 'assigned_to', 'label': 'Assigned To (Username)'},
@@ -121,6 +124,12 @@ def upload_file():
             auto_mapping[col] = 'model'
         elif 'hostname' in col_lower:
             auto_mapping[col] = 'hostname'
+        elif 'country' in col_lower:
+            auto_mapping[col] = 'country'
+        elif 'city' in col_lower:
+            auto_mapping[col] = 'city'
+        elif 'location' in col_lower or 'office' in col_lower:
+            auto_mapping[col] = 'location_code'
         elif 'gep asset tag' in col_lower or 'asset tag' in col_lower:
             auto_mapping[col] = 'company_asset_tag'
         elif 'us gep' in col_lower or 'secondary' in col_lower:
