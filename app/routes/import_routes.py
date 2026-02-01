@@ -173,17 +173,25 @@ def upload_file():
 @import_bp.route('/import/process', methods=['POST'])
 def process_import():
     """Process the mapped import"""
+    print("=== IMPORT PROCESS STARTED ===")
+
     filepath = session.get('import_filepath')
+    print(f"Filepath from session: {filepath}")
 
     if not filepath or not os.path.exists(filepath):
+        print(f"FILE NOT FOUND OR SESSION EMPTY!")
         flash('Session expired. Please upload file again.', 'error')
         return redirect(url_for('import_bp.import_page'))
+
+    print(f"File exists, reading...")
 
     # Read file again
     if filepath.endswith('.csv'):
         df = pd.read_csv(filepath)
     else:
         df = pd.read_excel(filepath)
+
+    print(f"File read successfully, {len(df)} rows")
 
     # Get mapping from form
     mapping = {}
@@ -373,6 +381,9 @@ def process_import():
     # Clear session
     session.pop('import_filepath', None)
     session.pop('import_filename', None)
+
+    print(f"=== IMPORT COMPLETE ===")
+    print(f"Created: {results['assets_created']}, Errors: {len(results['errors'])}")
 
     return render_template('import_results.html', results=results)
 
