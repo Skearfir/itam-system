@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Import Assets - ITAM System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Import Assets from Excel/CSV</h2>
+</div>
+
+<div class="import-container">
+    <div class="import-card">
+        <h3>📁 Upload Your File</h3>
+        <p>Import your existing asset data from Excel or CSV files.</p>
+        
+        <form action="{{ url_for('import_bp.upload_file') }}" method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="file-upload-area" id="dropZone">
+                <div class="upload-icon">📄</div>
+                <p>Drag & drop your file here, or click to browse</p>
+                <p class="file-types">Supported: .xlsx, .xls, .csv</p>
+                <input type="file" name="file" id="fileInput" accept=".csv,.xlsx,.xls" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Upload & Continue</button>
+        </form>
+    </div>
+    
+    <div class="import-card">
+        <h3>💡 Need a Starting Point?</h3>
+        <p>Download our template with all the recommended columns:</p>
+        <a href="{{ url_for('import_bp.download_template') }}" class="btn btn-secondary">
+            Download CSV Template
+        </a>
+    </div>
+    
+    <div class="import-card">
+        <h3>📋 What You Can Import</h3>
+        <ul class="feature-list">
+            <li>✅ Service Tags / Serial Numbers</li>
+            <li>✅ Brand, Model, Hostname</li>
+            <li>✅ Asset Tags (Primary & Secondary)</li>
+            <li>✅ Status (Permanent, Stock, Faulty, etc.)</li>
+            <li>✅ Warranty Expiry Dates</li>
+            <li>✅ User Assignments</li>
+            <li>✅ Department Information</li>
+            <li>✅ Hardware Specs (RAM, Storage, CPU)</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+.import-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+.import-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.import-card h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.file-upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 1.5rem;
+}
+
+.file-upload-area:hover {
+    border-color: #3498db;
+    background: #f8f9fa;
+}
+
+.file-upload-area.dragover {
+    border-color: #27ae60;
+    background: #d4edda;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.file-types {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+#fileInput {
+    display: none;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .import-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    if (fileInput.files.length > 0) {
+        dropZone.querySelector('p').textContent = '📎 ' + fileInput.files[0].name;
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        dropZone.querySelector('p').textContent = '📎 ' + fileInput.files[0].name;
+    }
+});
+</script>
+{% endblock %}

@@ -28,6 +28,8 @@ def create_app(config_class=Config):
     # Register blueprints
     from app.routes import main
     from app.routes import views  # Import views AFTER main blueprint exists
+    from app.routes.import_routes import import_bp
+    app.register_blueprint(import_bp)
     app.register_blueprint(main)
 
     return app

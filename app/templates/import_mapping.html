@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Map Columns - ITAM Import{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Step 2: Map Your Columns</h2>
+    <p>We found {{ total_rows }} rows. Match your columns to ITAM fields.</p>
+</div>
+
+<form action="{{ url_for('import_bp.process_import') }}" method="POST">
+    <div class="mapping-container">
+        <div class="mapping-card">
+            <h3>📊 Column Mapping</h3>
+            <p>We've auto-detected some mappings. Please verify and adjust as needed.</p>
+            
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Your Column</th>
+                        <th>→</th>
+                        <th>ITAM Field</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for col in columns %}
+                    <tr>
+                        <td><strong>{{ col }}</strong></td>
+                        <td>→</td>
+                        <td>
+                            <select name="mapping_{{ col }}" class="mapping-select">
+                                {% for field in itam_fields %}
+                                <option value="{{ field.name }}" 
+                                    {% if auto_mapping.get(col) == field.name %}selected{% endif %}>
+                                    {{ field.label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="options-card">
+            <h3>⚙️ Import Options</h3>
+            
+            <div class="option-group">
+                <label>If asset already exists (same Service Tag):</label>
+                <select name="duplicate_action" class="form-select">
+                    <option value="skip">Skip - keep existing data</option>
+                    <option value="update">Update - overwrite with new data</option>
+                </select>
+            </div>
+            
+            <div class="option-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="create_users" checked>
+                    Create users automatically from "Assigned To" column
+                </label>
+            </div>
+            
+            <div class="option-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="create_departments" checked>
+                    Create departments automatically
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div class="preview-card">
+        <h3>👀 Preview (First 5 Rows)</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        {% for col in columns %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_data %}
+                    <tr>
+                        {% for col in columns %}
+                        <td>{{ row[col] }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="{{ url_for('import_bp.import_page') }}" class="btn btn-secondary">← Back</a>
+        <button type="submit" class="btn btn-primary btn-lg">Import {{ total_rows }} Assets →</button>
+    </div>
+</form>
+
+<style>
+.mapping-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.mapping-card, .options-card, .preview-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.mapping-table th, .mapping-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.mapping-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.option-group {
+    margin-bottom: 1rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.preview-card {
+    margin-bottom: 1.5rem;
+}
+
+.preview-card .table-container {
+    overflow-x: auto;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .mapping-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

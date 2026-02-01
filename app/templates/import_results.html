@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Import Complete - ITAM System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>✅ Import Complete!</h2>
+</div>
+
+<div class="results-container">
+    <div class="results-card success-card">
+        <h3>📊 Import Summary</h3>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number">{{ results.assets_created }}</span>
+                <span class="stat-label">Assets Created</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ results.assets_updated }}</span>
+                <span class="stat-label">Assets Updated</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ results.assets_skipped }}</span>
+                <span class="stat-label">Assets Skipped</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ results.users_created }}</span>
+                <span class="stat-label">Users Created</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ results.departments_created }}</span>
+                <span class="stat-label">Departments Created</span>
+            </div>
+        </div>
+    </div>
+    
+    {% if results.errors %}
+    <div class="results-card error-card">
+        <h3>⚠️ Warnings & Errors ({{ results.errors|length }})</h3>
+        <ul class="error-list">
+            {% for error in results.errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div class="action-buttons">
+        <a href="{{ url_for('import_bp.import_page') }}" class="btn btn-secondary">Import More</a>
+        <a href="{{ url_for('main.assets') }}" class="btn btn-primary">View All Assets →</a>
+    </div>
+</div>
+
+<style>
+.results-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.results-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.success-card {
+    border-top: 4px solid #27ae60;
+}
+
+.error-card {
+    border-top: 4px solid #e74c3c;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.stat-item {
+text-align: center;
+}
+.stat-number {
+display: block;
+font-size: 2.5rem;
+font-weight: bold;
+color: #2c3e50;
+}
+.stat-label {
+color: #7f8c8d;
+font-size: 0.9rem;
+}
+.error-list {
+max-height: 200px;
+overflow-y: auto;
+padding-left: 1.5rem;
+}
+.error-list li {
+padding: 0.5rem 0;
+border-bottom: 1px solid #eee;
+color: #721c24;
+}
+.action-buttons {
+display: flex;
+justify-content: center;
+gap: 1rem;
+}
+</style>
+{% endblock %}
