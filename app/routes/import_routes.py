@@ -273,12 +273,20 @@ def process_import():
                         db.session.add(department)
                         db.session.flush()
                         results['departments_created'] += 1
+            # Create department if none exists
+            if not department and create_departments:
+                department = Department.query.filter_by(name='Unknown').first()
+                if not department:
+                    department = Department(name='Unknown')
+                    db.session.add(department)
+                    db.session.flush()
+                    results['departments_created'] += 1
 
             # Handle user
             user = None
             if 'assigned_to' in field_to_col:
                 username = clean_value(row[field_to_col['assigned_to']])
-                if username and username.upper() not in ['N/A', 'IT STOCK', 'STOCK']:
+                if username and username.upper() not in ['N/A', 'IT STOCK', 'STOCK', 'EWASTE', 'E-WASTE', 'SCRAP']:
                     if create_users:
                         # Try to find existing user
                         user = User.query.filter_by(full_name=username).first()
