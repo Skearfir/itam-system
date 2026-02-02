@@ -206,6 +206,8 @@ def process_import():
         df = pd.read_excel(filepath)
 
     print(f"File read successfully, {len(df)} rows", flush=True)
+    print(f"Columns in file: {df.columns.tolist()}", flush=True)
+    print(f"Form data: {dict(request.form)}", flush=True)
 
     # Get mapping from form (using sanitized column names)
     mapping = {}
@@ -293,6 +295,7 @@ def process_import():
                             user = User(
                                 employee_id=employee_id or f"IMPORT_{index}",
                                 full_name=username,
+                                email=f"{(employee_id or f'import_{index}')}@imported.local",
                                 department_id=department.id if department else None,
                                 date_of_hire=hire_date or date.today(),
                                 employment_status='Active'
@@ -325,19 +328,10 @@ def process_import():
                 'service_tag': service_tag,
                 'brand': clean_value(row[field_to_col['brand']]) if 'brand' in field_to_col else None,
                 'model': clean_value(row[field_to_col['model']]) if 'model' in field_to_col else None,
-                'hostname': clean_value(row[field_to_col['hostname']]) if 'hostname' in field_to_col else None,
-                'company_asset_tag': clean_value(
-                    row[field_to_col['company_asset_tag']]) if 'company_asset_tag' in field_to_col else None,
-                'secondary_asset_tag': clean_value(
-                    row[field_to_col['secondary_asset_tag']]) if 'secondary_asset_tag' in field_to_col else None,
+                'asset_tag_internal': clean_value(row[field_to_col['company_asset_tag']]) if 'company_asset_tag' in field_to_col else None,
+                'asset_tag_us': clean_value(row[field_to_col['secondary_asset_tag']]) if 'secondary_asset_tag' in field_to_col else None,
                 'current_status': status,
-                'warranty_expiry': parse_date(
-                    row[field_to_col['warranty_expiry']]) if 'warranty_expiry' in field_to_col else None,
-                'ram_gb': clean_value(row[field_to_col['ram_gb']]) if 'ram_gb' in field_to_col else None,
-                'storage_info': clean_value(
-                    row[field_to_col['storage_info']]) if 'storage_info' in field_to_col else None,
-                'processor': clean_value(row[field_to_col['processor']]) if 'processor' in field_to_col else None,
-                'notes': clean_value(row[field_to_col['notes']]) if 'notes' in field_to_col else None,
+                'warranty_expiry': parse_date(row[field_to_col['warranty_expiry']]) if 'warranty_expiry' in field_to_col else None,
                 'in_house': status in ['Stock', 'Box Package', 'Faulty'],
             }
 
@@ -358,14 +352,13 @@ def process_import():
                 if user and status in ['Permanent', 'Temporary']:
                     assignment_date = None
                     if 'assignment_date' in field_to_col:
-                        assignment_date = parse_date(row[field_to_col['assignment_date']])
+                        assigned_date = parse_date(row[field_to_col['assignment_date']])
 
                     assignment = Assignment(
                         service_tag=service_tag,
                         employee_id=user.employee_id,
                         assignment_type=status,
-                        assignment_date=assignment_date or date.today(),
-                        is_active=True
+                        assigned_date=assigned_date or date.today(),
                     )
                     db.session.add(assignment)
 
@@ -374,6 +367,7 @@ def process_import():
                     service_tag=service_tag,
                     event_type='Import',
                     event_date=date.today(),
+                    technician='System Import',
                     notes=f"Imported from {session.get('import_filename', 'file')}"
                 )
                 db.session.add(history)
@@ -413,9 +407,9 @@ def download_template():
     """Download a CSV template"""
     from flask import Response
 
-    template_data = """Service Tag,Brand,Model,Hostname,Local Asset Tag,International Asset Tag,Status,Warranty Expiry,Assigned To,Employee ID,Department,Assignment Date,RAM,Storage,Processor,Notes
-ABC12345,Dell,Latitude 7440,SJO-ABC12345,1408-0001,US001,Permanent,2027-01-15,John Smith,EMP001,IT Department,2024-01-15,16,512GB SSD,Intel i7,New hire machine
-XYZ67890,Lenovo,ThinkPad X1,SJO-XYZ67890,1408-0002,,Stock,2026-08-20,,,,,16,256GB SSD,Intel i5,Ready for deployment
+    template_data = """Service Tag,Brand,Model,Internal Asset Tag,US Asset Tag,Status,Warranty Expiry,Assigned To,Employee ID,Department
+ABC12345,Dell,Latitude 7440,1408-0001,US001,Permanent,2027-01-15,John Smith,EMP001,IT Department
+XYZ67890,Lenovo,ThinkPad X1,1408-0002,,Stock,2026-08-20,,,
 """
 
     return Response(
@@ -423,9 +417,3 @@ XYZ67890,Lenovo,ThinkPad X1,SJO-XYZ67890,1408-0002,,Stock,2026-08-20,,,,,16,256G
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=itam_import_template.csv'}
     )
-
-
-@import_bp.route('/import/test', methods=['GET', 'POST'])
-def test_route():
-    print("TEST ROUTE HIT!")
-    return "Test route works! Method: " + request.method
