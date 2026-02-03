@@ -46,9 +46,9 @@
         <div class="activity-list">
             {% for event in recent_events %}
             <div class="activity-item">
-                <span class="activity-date">{{ event.event_date.strftime('%Y-%m-%d') }}</span>
+                <span class="activity-date">{{ event.event_date.strftime('%Y-%m-%d') if event.event_date else 'Unknown' }}</span>
                 <span class="activity-type">{{ event.event_type }}</span>
-                <span class="activity-details">{{ event.service_tag }} - {{ event.notes[:50] }}</span>
+                <span class="activity-details">{{ event.service_tag }} - {{ event.notes[:50] if event.notes else 'No notes' }}</span>
             </div>
             {% endfor %}
         </div>
@@ -60,8 +60,8 @@
             {% if faulty_machines %}
                 {% for machine in faulty_machines %}
                 <div class="alert-item alert-danger">
-                    <strong>{{ machine.service_tag }}</strong> - Faulty since {{ machine.faulty_since_date.strftime('%Y-%m-%d') }}
-                    <br><small>{{ machine.faulty_sub_status }}</small>
+                    <strong>{{ machine.service_tag }}</strong> - Faulty since {{ machine.faulty_since_date.strftime('%Y-%m-%d') if machine.faulty_since_date else 'Unknown' }}
+                    <br><small>{{ machine.faulty_sub_status if machine.faulty_sub_status else 'No details' }}</small>
                 </div>
                 {% endfor %}
             {% else %}
