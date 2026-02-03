@@ -243,6 +243,24 @@ def process_import():
         'errors': []
     }
 
+    # ✅ FIX 1: Ensure "Unknown" department exists BEFORE processing
+    unknown_dept = None
+    if create_departments or create_users:
+        unknown_dept = Department.query.filter_by(name='Unknown').first()
+        if not unknown_dept:
+            unknown_dept = Department(name='Unknown')
+            db.session.add(unknown_dept)
+            try:
+                db.session.commit()
+                print("Created 'Unknown' department")
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Failed to create Unknown department: {str(e)}', 'error')
+                return redirect(url_for('import_bp.import_page'))
+
+    # Track created users to avoid duplicates within this import
+    created_user_ids = set()
+
     # Process each row
     for index, row in df.iterrows():
         try:
@@ -263,7 +281,7 @@ def process_import():
                 continue
 
             # Handle department
-            department = None
+            department = unknown_dept  # ✅ FIX 2: Default to Unknown
             if 'department' in field_to_col:
                 dept_name = clean_value(row[field_to_col['department']])
                 if dept_name and create_departments:
@@ -273,14 +291,6 @@ def process_import():
                         db.session.add(department)
                         db.session.flush()
                         results['departments_created'] += 1
-            # Create department if none exists
-            if not department and create_departments:
-                department = Department.query.filter_by(name='Unknown').first()
-                if not department:
-                    department = Department(name='Unknown')
-                    db.session.add(department)
-                    db.session.flush()
-                    results['departments_created'] += 1
 
             # Handle user
             user = None
@@ -288,28 +298,44 @@ def process_import():
                 username = clean_value(row[field_to_col['assigned_to']])
                 if username and username.upper() not in ['N/A', 'IT STOCK', 'STOCK', 'EWASTE', 'E-WASTE', 'SCRAP']:
                     if create_users:
-                        # Try to find existing user
-                        user = User.query.filter_by(full_name=username).first()
-                        if not user:
-                            # Create new user
-                            employee_id = None
-                            if 'employee_id' in field_to_col:
-                                employee_id = clean_value(row[field_to_col['employee_id']])
+                        # Get employee_id from data
+                        employee_id = None
+                        if 'employee_id' in field_to_col:
+                            employee_id = clean_value(row[field_to_col['employee_id']])
 
+                        # ✅ FIX 3: Create unique employee_id if missing
+                        if not employee_id or employee_id in created_user_ids:
+                            employee_id = f"IMPORT_{index}"
+
+                        # Try to find existing user by employee_id
+                        user = User.query.filter_by(employee_id=employee_id).first()
+
+                        if not user:
                             hire_date = None
                             if 'date_of_hire' in field_to_col:
                                 hire_date = parse_date(row[field_to_col['date_of_hire']])
 
+                            # ✅ FIX 4: Generate unique email
+                            base_email = employee_id.lower().replace(' ', '_')
+                            email = f"{base_email}@imported.local"
+
+                            # Check if email exists, make it unique
+                            counter = 0
+                            while User.query.filter_by(email=email).first():
+                                counter += 1
+                                email = f"{base_email}_{counter}@imported.local"
+
                             user = User(
-                                employee_id=employee_id or f"IMPORT_{index}",
+                                employee_id=employee_id,
                                 full_name=username,
-                                email=f"{(employee_id or f'import')}_{index}@imported.local",
-                                department_id=department.id if department else None,
+                                email=email,
+                                department_id=department.id,  # ✅ FIX 5: Always has a department now
                                 date_of_hire=hire_date or date.today(),
                                 employment_status='Active'
                             )
                             db.session.add(user)
                             db.session.flush()
+                            created_user_ids.add(employee_id)  # Track it
                             results['users_created'] += 1
 
             # Map status values
@@ -360,13 +386,13 @@ def process_import():
                 if user and status in ['Permanent', 'Temporary']:
                     assignment_date = None
                     if 'assignment_date' in field_to_col:
-                        assigned_date = parse_date(row[field_to_col['assignment_date']])
+                        assignment_date = parse_date(row[field_to_col['assignment_date']])
 
                     assignment = Assignment(
                         service_tag=service_tag,
                         employee_id=user.employee_id,
                         assignment_type=status,
-                        assigned_date=assigned_date or date.today(),
+                        assigned_date=assignment_date or date.today(),
                     )
                     db.session.add(assignment)
 
@@ -381,7 +407,11 @@ def process_import():
                 db.session.add(history)
 
         except Exception as e:
-            results['errors'].append(f"Row {index + 2}: {str(e)}")
+            # ✅ FIX 6: Rollback session after error so next row can proceed
+            db.session.rollback()
+            error_msg = f"Row {index + 2}: {str(e)}"
+            results['errors'].append(error_msg)
+            print(f"ERROR: {error_msg}", flush=True)
             continue
 
     # Commit all changes
@@ -405,7 +435,7 @@ def process_import():
     session.pop('import_filename', None)
 
     print(f"=== IMPORT COMPLETE ===")
-    print(f"Created: {results['assets_created']}, Errors: {len(results['errors'])}")
+    print(f"Created: {results['assets_created']}, Updated: {results['assets_updated']}, Skipped: {results['assets_skipped']}, Errors: {len(results['errors'])}")
 
     return render_template('import_results.html', results=results)
 
