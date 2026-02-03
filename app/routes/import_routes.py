@@ -303,7 +303,7 @@ def process_import():
                             user = User(
                                 employee_id=employee_id or f"IMPORT_{index}",
                                 full_name=username,
-                                email=f"{(employee_id or f'import_{index}')}@imported.local",
+                                email=f"{(employee_id or f'import')}_{index}@imported.local",
                                 department_id=department.id if department else None,
                                 date_of_hire=hire_date or date.today(),
                                 employment_status='Active'
