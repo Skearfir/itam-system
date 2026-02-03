@@ -296,27 +296,43 @@ def process_import():
             user = None
             if 'assigned_to' in field_to_col:
                 username = clean_value(row[field_to_col['assigned_to']])
-                if username and username.upper() not in ['N/A', 'IT STOCK', 'STOCK', 'EWASTE', 'E-WASTE', 'SCRAP']:
+
+                # ✅ Expanded exclusion list - don't create users for these
+                excluded_values = [
+                    'N/A', 'IT STOCK', 'STOCK', 'EWASTE', 'E-WASTE', 'SCRAP',
+                    'STOLEN', 'TO BE SCRAPPED', 'TO BE SCRAP', 'FAULTY',
+                    'WAREHOUSE', 'DISPOSAL', 'LOST', 'DAMAGED', 'BROKEN',
+                    'RESERVE', 'RESERVED', 'UNASSIGNED', 'AVAILABLE'
+                ]
+
+                if username and username.upper() not in excluded_values:
                     if create_users:
-                        # Get employee_id from data
-                        employee_id = None
+                        # Get employee_id from CSV
+                        employee_id_from_csv = None
                         if 'employee_id' in field_to_col:
-                            employee_id = clean_value(row[field_to_col['employee_id']])
+                            employee_id_from_csv = clean_value(row[field_to_col['employee_id']])
 
-                        # ✅ FIX 3: Create unique employee_id if missing
-                        if not employee_id or employee_id in created_user_ids:
-                            employee_id = f"IMPORT_{index}"
+                        # Get hire date
+                        hire_date = None
+                        if 'date_of_hire' in field_to_col:
+                            hire_date = parse_date(row[field_to_col['date_of_hire']])
 
-                        # Try to find existing user by employee_id
-                        user = User.query.filter_by(employee_id=employee_id).first()
+                        # ✅ FIX: Try to find existing user by employee_id OR full_name
+                        if employee_id_from_csv:
+                            # Try by employee_id first (most reliable)
+                            user = User.query.filter_by(employee_id=employee_id_from_csv).first()
 
                         if not user:
-                            hire_date = None
-                            if 'date_of_hire' in field_to_col:
-                                hire_date = parse_date(row[field_to_col['date_of_hire']])
+                            # Try by full name (in case employee_id is missing but user exists)
+                            user = User.query.filter_by(full_name=username).first()
 
-                            # ✅ FIX 4: Generate unique email
-                            base_email = employee_id.lower().replace(' ', '_')
+                        # Create new user only if not found
+                        if not user:
+                            # Use CSV employee_id if available, otherwise generate one
+                            final_employee_id = employee_id_from_csv if employee_id_from_csv else f"IMPORT_{index}"
+
+                            # ✅ FIX: Use ORIGINAL employee_id from CSV for email
+                            base_email = (employee_id_from_csv or f"import_{index}").lower().replace(' ', '_')
                             email = f"{base_email}@imported.local"
 
                             # Check if email exists, make it unique
@@ -326,17 +342,17 @@ def process_import():
                                 email = f"{base_email}_{counter}@imported.local"
 
                             user = User(
-                                employee_id=employee_id,
+                                employee_id=final_employee_id,
                                 full_name=username,
                                 email=email,
-                                department_id=department.id,  # ✅ FIX 5: Always has a department now
+                                department_id=department.id,
                                 date_of_hire=hire_date or date.today(),
                                 employment_status='Active'
                             )
                             db.session.add(user)
                             db.session.flush()
-                            created_user_ids.add(employee_id)  # Track it
                             results['users_created'] += 1
+                            print(f"Created user: {username} (ID: {final_employee_id}, Email: {email})", flush=True)
 
             # Map status values
             status = 'Stock'
