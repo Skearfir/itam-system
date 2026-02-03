@@ -109,6 +109,7 @@ def upload_file():
         {'name': 'warranty_expiry', 'label': 'Warranty Expiry Date'},
         {'name': 'assigned_to', 'label': 'Assigned To (Username)'},
         {'name': 'employee_id', 'label': 'Employee ID'},
+        {'name': 'email', 'label': 'Email Address'},  # ✅ ADD THIS LINE
         {'name': 'department', 'label': 'Department'},
         {'name': 'assignment_date', 'label': 'Assignment Date'},
         {'name': 'date_of_hire', 'label': 'Employee Hire Date'},
@@ -148,6 +149,8 @@ def upload_file():
             auto_mapping[col] = 'assigned_to'
         elif 'employee id' in col_lower or 'zoho' in col_lower:
             auto_mapping[col] = 'employee_id'
+        elif 'email' in col_lower or 'e-mail' in col_lower or 'mail' in col_lower:  # ✅ ADD THIS
+            auto_mapping[col] = 'email'
         elif 'department' in col_lower:
             auto_mapping[col] = 'department'
         elif 'assigned date' in col_lower:
@@ -331,15 +334,26 @@ def process_import():
                             # Use CSV employee_id if available, otherwise generate one
                             final_employee_id = employee_id_from_csv if employee_id_from_csv else f"IMPORT_{index}"
 
-                            # ✅ FIX: Use ORIGINAL employee_id from CSV for email
-                            base_email = (employee_id_from_csv or f"import_{index}").lower().replace(' ', '_')
-                            email = f"{base_email}@imported.local"
+                            # ✅ FIX: Use email from CSV if available
+                            email_from_csv = None
+                            if 'email' in field_to_col:
+                                email_from_csv = clean_value(row[field_to_col['email']])
 
-                            # Check if email exists, make it unique
+                            if email_from_csv:
+                                # Use CSV email
+                                email = email_from_csv.lower().strip()
+                            else:
+                                # Generate email if not in CSV
+                                base_email = (employee_id_from_csv or f"import_{index}").lower().replace(' ', '_')
+                                email = f"{base_email}@imported.local"
+
+                            # Check if email exists, make it unique (safety net)
                             counter = 0
+                            original_email = email
                             while User.query.filter_by(email=email).first():
                                 counter += 1
-                                email = f"{base_email}_{counter}@imported.local"
+                                email_parts = original_email.split('@')
+                                email = f"{email_parts[0]}_{counter}@{email_parts[1]}"
 
                             user = User(
                                 employee_id=final_employee_id,
