@@ -47,7 +47,7 @@
             {% for asset in assets %}
             <tr>
                 <td class="service-tag">
-                    <a href="{{ url_for('main.asset_detail', service_tag=asset.service_tag) }}">
+                    <a href="#" onclick="openAssetModal('{{ asset.service_tag }}'); return false;">
                         {{ asset.service_tag }}
                     </a>
                 </td>
@@ -84,11 +84,598 @@
                     {% endif %}
                 </td>
                 <td>
-                    <button class="btn btn-sm">View</button>
+                    <button class="btn btn-sm" onclick="openAssetModal('{{ asset.service_tag }}')">View</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Asset Detail Modal -->
+<div id="assetModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2 id="modalTitle">Asset Details</h2>
+            <span class="modal-close" onclick="closeAssetModal()">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <!-- Loading State -->
+            <div id="modalLoading" class="modal-loading">
+                <p>Loading asset details...</p>
+            </div>
+
+            <!-- Content (hidden until loaded) -->
+            <div id="modalContent" style="display: none;">
+                <!-- Tabs -->
+                <div class="modal-tabs">
+                    <button class="tab-button active" onclick="switchTab('details')">Details</button>
+                    <button class="tab-button" onclick="switchTab('assignment')">Assignment</button>
+                    <button class="tab-button" onclick="switchTab('history')">History</button>
+                </div>
+
+                <!-- Details Tab -->
+                <div id="tab-details" class="tab-content active">
+                    <div class="detail-grid">
+                        <div class="detail-section">
+                            <h3>Asset Information</h3>
+                            <div class="detail-row">
+                                <label>Service Tag:</label>
+                                <span id="detail-service-tag" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Brand:</label>
+                                <span id="detail-brand" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Model:</label>
+                                <span id="detail-model" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Hostname:</label>
+                                <span id="detail-hostname" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Internal Tag:</label>
+                                <span id="detail-tag-internal" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>US Tag:</label>
+                                <span id="detail-tag-us" class="detail-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Status & Location</h3>
+                            <div class="detail-row">
+                                <label>Current Status:</label>
+                                <select id="detail-status" class="status-select" onchange="handleStatusChange()">
+                                    <option value="Stock">Stock</option>
+                                    <option value="Box Package">Box Package</option>
+                                    <option value="Permanent">Permanent</option>
+                                    <option value="Temporary">Temporary</option>
+                                    <option value="Faulty">Faulty</option>
+                                    <option value="Stolen">Stolen</option>
+                                    <option value="Scrap">Scrap</option>
+                                    <option value="Reserved">Reserved</option>
+                                </select>
+                            </div>
+                            <div class="detail-row" id="faulty-substatus-row" style="display: none;">
+                                <label>Faulty Reason:</label>
+                                <input type="text" id="detail-faulty-substatus" class="form-input" placeholder="e.g., Screen broken">
+                            </div>
+                            <div class="detail-row">
+                                <label>In House:</label>
+                                <span id="detail-in-house" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Storage Location:</label>
+                                <span id="detail-storage-location" class="detail-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Specifications</h3>
+                            <div class="detail-row">
+                                <label>RAM:</label>
+                                <span id="detail-ram" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Storage:</label>
+                                <span id="detail-storage" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Processor:</label>
+                                <span id="detail-processor" class="detail-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>Warranty & Dates</h3>
+                            <div class="detail-row">
+                                <label>Warranty Expiry:</label>
+                                <span id="detail-warranty" class="detail-value"></span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Purchase Date:</label>
+                                <span id="detail-purchase" class="detail-value"></span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section full-width">
+                            <h3>Notes</h3>
+                            <div class="detail-row">
+                                <span id="detail-notes" class="detail-value"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" onclick="saveAssetChanges()">Save Changes</button>
+                        <button class="btn btn-secondary" onclick="closeAssetModal()">Close</button>
+                    </div>
+                </div>
+
+                <!-- Assignment Tab -->
+                <div id="tab-assignment" class="tab-content">
+                    <div id="current-assignment-section">
+                        <h3>Current Assignment</h3>
+                        <div id="current-assignment-content"></div>
+                    </div>
+
+                    <div id="assignment-history-section" style="margin-top: 2rem;">
+                        <h3>Assignment History</h3>
+                        <div id="assignment-history-content"></div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="tab-history" class="tab-content">
+                    <h3>Asset History</h3>
+                    <div id="history-timeline"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --card-bg: #ffffff;
+    --bg-primary: #f5f5f5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-color: #e0e0e0;
+    --primary-color: #007bff;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --card-bg: #2a2a2a;
+        --bg-primary: #1a1a1a;
+        --text-primary: #e0e0e0;
+        --text-secondary: #b0b0b0;
+        --text-muted: #808080;
+        --border-color: #404040;
+        --primary-color: #4a9eff;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 1200px;
+}
+
+.modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+/* Tabs */
+.modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-button:hover {
+    color: var(--text-primary);
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Detail Grid */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.detail-section {
+    background: var(--bg-primary);
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.detail-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 150px;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    text-align: right;
+    flex: 1;
+}
+
+.status-select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.form-input {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    width: 100%;
+}
+
+/* Modal Actions */
+.modal-actions {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* Assignment Display */
+.assignment-card {
+    background: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+}
+
+.assignment-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+}
+
+.assignment-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.assignment-info .info-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.assignment-info .info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* History Timeline */
+.history-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.history-event {
+    position: relative;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--bg-primary);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+}
+
+.history-event::before {
+    content: '';
+    position: absolute;
+    left: -2.4rem;
+    top: 1rem;
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    border: 3px solid var(--bg-primary);
+}
+
+.history-date {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.history-type {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.history-details {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.history-tech {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+</style>
+
+<script>
+let currentAssetData = null;
+
+function openAssetModal(serviceTag) {
+    const modal = document.getElementById('assetModal');
+    const loading = document.getElementById('modalLoading');
+    const content = document.getElementById('modalContent');
+
+    // Show modal and loading state
+    modal.style.display = 'block';
+    loading.style.display = 'block';
+    content.style.display = 'none';
+
+    // Fetch asset data
+    fetch(`/api/asset/${serviceTag}`)
+        .then(response => response.json())
+        .then(data => {
+            currentAssetData = data;
+            populateModal(data);
+            loading.style.display = 'none';
+            content.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error fetching asset:', error);
+            loading.innerHTML = '<p style="color: red;">Error loading asset details</p>';
+        });
+}
+
+function closeAssetModal() {
+    document.getElementById('assetModal').style.display = 'none';
+    currentAssetData = null;
+}
+
+function populateModal(data) {
+    const asset = data.asset;
+
+    // Set modal title
+    document.getElementById('modalTitle').textContent = `Asset: ${asset.service_tag}`;
+
+    // Populate details
+    document.getElementById('detail-service-tag').textContent = asset.service_tag || '—';
+    document.getElementById('detail-brand').textContent = asset.brand || '—';
+    document.getElementById('detail-model').textContent = asset.model || '—';
+    document.getElementById('detail-hostname').textContent = asset.hostname || '—';
+    document.getElementById('detail-tag-internal').textContent = asset.asset_tag_internal || '—';
+    document.getElementById('detail-tag-us').textContent = asset.asset_tag_us || '—';
+    document.getElementById('detail-status').value = asset.current_status || 'Stock';
+    document.getElementById('detail-faulty-substatus').value = asset.faulty_sub_status || '';
+    document.getElementById('detail-in-house').textContent = asset.in_house ? 'Yes' : 'No';
+    document.getElementById('detail-storage-location').textContent = asset.storage_location || '—';
+    document.getElementById('detail-ram').textContent = asset.ram_gb ? `${asset.ram_gb} GB` : '—';
+    document.getElementById('detail-storage').textContent = asset.storage_info || '—';
+    document.getElementById('detail-processor').textContent = asset.processor || '—';
+    document.getElementById('detail-warranty').textContent = asset.warranty_expiry || '—';
+    document.getElementById('detail-purchase').textContent = asset.purchase_date || '—';
+    document.getElementById('detail-notes').textContent = asset.notes || 'No notes';
+
+    // Show/hide faulty substatus
+    handleStatusChange();
+
+    // Populate current assignment
+    const assignmentContent = document.getElementById('current-assignment-content');
+    if (data.current_assignment) {
+        const a = data.current_assignment;
+        assignmentContent.innerHTML = `
+            <div class="assignment-card">
+                <h4>${a.full_name}</h4>
+                <div class="assignment-info">
+                    <div class="info-row"><span class="info-label">Employee ID:</span> ${a.employee_id}</div>
+                    <div class="info-row"><span class="info-label">Email:</span> ${a.email}</div>
+                    <div class="info-row"><span class="info-label">Department:</span> ${a.department}</div>
+                    <div class="info-row"><span class="info-label">Assigned:</span> ${a.assigned_date}</div>
+                    <div class="info-row"><span class="info-label">Type:</span> ${a.assignment_type}</div>
+                </div>
+            </div>
+        `;
+    } else {
+        assignmentContent.innerHTML = '<p class="text-muted">Not currently assigned</p>';
+    }
+
+    // Populate assignment history
+    const historyContent = document.getElementById('assignment-history-content');
+    if (data.assignment_history && data.assignment_history.length > 0) {
+        historyContent.innerHTML = data.assignment_history.map(a => `
+            <div class="assignment-card">
+                <div class="assignment-info">
+                    <div class="info-row"><span class="info-label">User:</span> ${a.full_name}</div>
+                    <div class="info-row"><span class="info-label">Period:</span> ${a.assigned_date} to ${a.unassigned_date}</div>
+                    <div class="info-row"><span class="info-label">Type:</span> ${a.assignment_type}</div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        historyContent.innerHTML = '<p class="text-muted">No assignment history</p>';
+    }
+
+    // Populate history timeline
+    const timeline = document.getElementById('history-timeline');
+    if (data.history && data.history.length > 0) {
+        timeline.innerHTML = data.history.map(h => `
+            <div class="history-event">
+                <div class="history-date">${h.event_date}</div>
+                <div class="history-type">${h.event_type}</div>
+                <div class="history-details">${h.notes}</div>
+                <div class="history-tech">by ${h.technician} at ${h.timestamp}</div>
+            </div>
+        `).join('');
+    } else {
+        timeline.innerHTML = '<p class="text-muted">No history available</p>';
+    }
+}
+
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Show selected tab
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function handleStatusChange() {
+    const status = document.getElementById('detail-status').value;
+    const faultyRow = document.getElementById('faulty-substatus-row');
+
+    if (status === 'Faulty') {
+        faultyRow.style.display = 'flex';
+    } else {
+        faultyRow.style.display = 'none';
+    }
+}
+
+function saveAssetChanges() {
+    const newStatus = document.getElementById('detail-status').value;
+    const faultySubstatus = document.getElementById('detail-faulty-substatus').value;
+
+    // TODO: Send API call to update asset
+    console.log('Saving changes:', {
+        service_tag: currentAssetData.asset.service_tag,
+        status: newStatus,
+        faulty_substatus: faultySubstatus
+    });
+
+    alert('Save functionality coming in next iteration!');
+    // Will add API endpoint to save changes
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('assetModal');
+    if (event.target === modal) {
+        closeAssetModal();
+    }
+}
+</script>
 {% endblock %}
