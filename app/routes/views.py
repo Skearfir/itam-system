@@ -109,9 +109,10 @@ def api_asset_detail(service_tag):
             'processor': getattr(asset, 'processor', None),
             'in_house': asset.in_house,
             'storage_location': asset.storage_location,
-            'notes': getattr(asset, 'notes', None)
+            'notes': getattr(asset, 'notes', None),
             'custom_fields': asset.custom_fields or {}
         },
+
         'current_assignment': {
             'employee_id': current_assignment.employee_id,
             'full_name': current_assignment.user.full_name if current_assignment.user else 'Reserved',
