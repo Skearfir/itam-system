@@ -1,3 +1,5 @@
+# Create .gitignore file (you showed me this content earlier from the Server)
+@"
 # Python
 __pycache__/
 *.py[cod]
@@ -43,3 +45,4 @@ desktop.ini
 
 # Logs
 *.log
+"@ | Out-File -FilePath .gitignore -Encoding utf8
