@@ -96,6 +96,7 @@ def upload_file():
     # ITAM fields that can be mapped
     itam_fields = [
         {'name': 'skip', 'label': '-- Skip this column --'},
+        {'name': 'custom_field', 'label': '✨ Keep as Custom Field'},  # ✅ NEW OPTION
         {'name': 'service_tag', 'label': 'Service Tag (Required)', 'required': True},
         {'name': 'brand', 'label': 'Brand/Make'},
         {'name': 'model', 'label': 'Model'},
@@ -109,7 +110,7 @@ def upload_file():
         {'name': 'warranty_expiry', 'label': 'Warranty Expiry Date'},
         {'name': 'assigned_to', 'label': 'Assigned To (Username)'},
         {'name': 'employee_id', 'label': 'Employee ID'},
-        {'name': 'email', 'label': 'Email Address'},  # ✅ ADD THIS LINE
+        {'name': 'email', 'label': 'Email Address'},
         {'name': 'department', 'label': 'Department'},
         {'name': 'assignment_date', 'label': 'Assignment Date'},
         {'name': 'date_of_hire', 'label': 'Employee Hire Date'},
@@ -149,7 +150,7 @@ def upload_file():
             auto_mapping[col] = 'assigned_to'
         elif 'employee id' in col_lower or 'zoho' in col_lower:
             auto_mapping[col] = 'employee_id'
-        elif 'email' in col_lower or 'e-mail' in col_lower or 'mail' in col_lower:  # ✅ ADD THIS
+        elif 'email' in col_lower or 'e-mail' in col_lower or 'mail' in col_lower:
             auto_mapping[col] = 'email'
         elif 'department' in col_lower:
             auto_mapping[col] = 'department'
@@ -166,7 +167,8 @@ def upload_file():
         elif 'remark' in col_lower or 'note' in col_lower or 'comment' in col_lower:
             auto_mapping[col] = 'notes'
         else:
-            auto_mapping[col] = 'skip'
+            # ✅ CHANGED: Default unmapped columns to custom_field instead of skip
+            auto_mapping[col] = 'custom_field'
 
     # Preview first 5 rows
     preview_data = df.head(5).fillna('').to_dict('records')
@@ -190,17 +192,10 @@ def process_import():
 
     filepath = session.get('import_filepath')
     print(f"Filepath from session: {filepath}", flush=True)
-    print(f"Session contents: {dict(session)}", flush=True)
-
-    if filepath:
-        print(f"File exists check: {os.path.exists(filepath)}", flush=True)
 
     if not filepath or not os.path.exists(filepath):
-        print("REDIRECTING - filepath missing or file not found", flush=True)
         flash('Session expired. Please upload file again.', 'error')
         return redirect(url_for('import_bp.import_page'))
-
-    print("File exists, reading...", flush=True)
 
     # Read file again
     if filepath.endswith('.csv'):
@@ -209,22 +204,24 @@ def process_import():
         df = pd.read_excel(filepath)
 
     print(f"File read successfully, {len(df)} rows", flush=True)
-    print(f"Columns in file: {df.columns.tolist()}", flush=True)
-    print(f"Form data: {dict(request.form)}", flush=True)
 
     # Get mapping from form (using sanitized column names)
     mapping = {}
+    custom_field_columns = []  # ✅ NEW: Track columns for custom fields
+
     for col in df.columns:
         safe_col = sanitize_column_name(col)
         field = request.form.get(f'mapping_{safe_col}')
-        if field and field != 'skip':
+        if field == 'custom_field':  # ✅ NEW: Collect custom field columns
+            custom_field_columns.append(col)
+        elif field and field != 'skip':
             mapping[col] = field
 
-    print(f"Mapping: {mapping}")
+    print(f"Standard mapping: {mapping}")
+    print(f"Custom field columns: {custom_field_columns}")  # ✅ NEW
 
     # Check required field
     if 'service_tag' not in mapping.values():
-        print("ERROR: No service_tag mapping found!")
         flash('Service Tag mapping is required!', 'error')
         return redirect(url_for('import_bp.import_page'))
 
@@ -246,7 +243,7 @@ def process_import():
         'errors': []
     }
 
-    # ✅ FIX 1: Ensure "Unknown" department exists BEFORE processing
+    # Ensure "Unknown" department exists BEFORE processing
     unknown_dept = None
     if create_departments or create_users:
         unknown_dept = Department.query.filter_by(name='Unknown').first()
@@ -260,9 +257,6 @@ def process_import():
                 db.session.rollback()
                 flash(f'Failed to create Unknown department: {str(e)}', 'error')
                 return redirect(url_for('import_bp.import_page'))
-
-    # Track created users to avoid duplicates within this import
-    created_user_ids = set()
 
     # Process each row
     for index, row in df.iterrows():
@@ -284,7 +278,7 @@ def process_import():
                 continue
 
             # Handle department
-            department = unknown_dept  # ✅ FIX 2: Default to Unknown
+            department = unknown_dept
             if 'department' in field_to_col:
                 dept_name = clean_value(row[field_to_col['department']])
                 if dept_name and create_departments:
@@ -300,7 +294,6 @@ def process_import():
             if 'assigned_to' in field_to_col:
                 username = clean_value(row[field_to_col['assigned_to']])
 
-                # ✅ Expanded exclusion list - don't create users for these
                 excluded_values = [
                     'N/A', 'IT STOCK', 'STOCK', 'EWASTE', 'E-WASTE', 'SCRAP',
                     'STOLEN', 'TO BE SCRAPPED', 'TO BE SCRAP', 'FAULTY',
@@ -310,44 +303,33 @@ def process_import():
 
                 if username and username.upper() not in excluded_values:
                     if create_users:
-                        # Get employee_id from CSV
                         employee_id_from_csv = None
                         if 'employee_id' in field_to_col:
                             employee_id_from_csv = clean_value(row[field_to_col['employee_id']])
 
-                        # Get hire date
                         hire_date = None
                         if 'date_of_hire' in field_to_col:
                             hire_date = parse_date(row[field_to_col['date_of_hire']])
 
-                        # ✅ FIX: Try to find existing user by employee_id OR full_name
                         if employee_id_from_csv:
-                            # Try by employee_id first (most reliable)
                             user = User.query.filter_by(employee_id=employee_id_from_csv).first()
 
                         if not user:
-                            # Try by full name (in case employee_id is missing but user exists)
                             user = User.query.filter_by(full_name=username).first()
 
-                        # Create new user only if not found
                         if not user:
-                            # Use CSV employee_id if available, otherwise generate one
                             final_employee_id = employee_id_from_csv if employee_id_from_csv else f"IMPORT_{index}"
 
-                            # ✅ FIX: Use email from CSV if available
                             email_from_csv = None
                             if 'email' in field_to_col:
                                 email_from_csv = clean_value(row[field_to_col['email']])
 
                             if email_from_csv:
-                                # Use CSV email
                                 email = email_from_csv.lower().strip()
                             else:
-                                # Generate email if not in CSV
                                 base_email = (employee_id_from_csv or f"import_{index}").lower().replace(' ', '_')
                                 email = f"{base_email}@imported.local"
 
-                            # Check if email exists, make it unique (safety net)
                             counter = 0
                             original_email = email
                             while User.query.filter_by(email=email).first():
@@ -387,22 +369,35 @@ def process_import():
                     }
                     status = status_map.get(raw_status.lower(), raw_status)
 
+            # ✅ NEW: Collect custom fields from row
+            custom_fields_data = {}
+            for col in custom_field_columns:
+                value = clean_value(row[col])
+                if value is not None:  # Only store non-null values
+                    custom_fields_data[col] = str(value)  # Convert to string for JSON
+
+            print(f"Row {index + 2} custom fields: {custom_fields_data}", flush=True)
+
             # Build asset data
             asset_data = {
                 'service_tag': service_tag,
                 'brand': clean_value(row[field_to_col['brand']]) if 'brand' in field_to_col else None,
                 'model': clean_value(row[field_to_col['model']]) if 'model' in field_to_col else None,
-                'asset_tag_internal': clean_value(row[field_to_col['company_asset_tag']]) if 'company_asset_tag' in field_to_col else None,
-                'asset_tag_us': clean_value(row[field_to_col['secondary_asset_tag']]) if 'secondary_asset_tag' in field_to_col else None,
+                'asset_tag_internal': clean_value(
+                    row[field_to_col['company_asset_tag']]) if 'company_asset_tag' in field_to_col else None,
+                'asset_tag_us': clean_value(
+                    row[field_to_col['secondary_asset_tag']]) if 'secondary_asset_tag' in field_to_col else None,
                 'current_status': status,
-                'warranty_expiry': parse_date(row[field_to_col['warranty_expiry']]) if 'warranty_expiry' in field_to_col else None,
+                'warranty_expiry': parse_date(
+                    row[field_to_col['warranty_expiry']]) if 'warranty_expiry' in field_to_col else None,
                 'in_house': status in ['Stock', 'Box Package', 'Faulty'],
+                'custom_fields': custom_fields_data,  # ✅ NEW: Add custom fields
             }
 
             if existing_asset and duplicate_action == 'update':
                 # Update existing
                 for key, value in asset_data.items():
-                    if value is not None:
+                    if value is not None or key == 'custom_fields':  # Always update custom_fields even if empty
                         setattr(existing_asset, key, value)
                 results['assets_updated'] += 1
             else:
@@ -437,7 +432,6 @@ def process_import():
                 db.session.add(history)
 
         except Exception as e:
-            # ✅ FIX 6: Rollback session after error so next row can proceed
             db.session.rollback()
             error_msg = f"Row {index + 2}: {str(e)}"
             results['errors'].append(error_msg)
@@ -465,7 +459,8 @@ def process_import():
     session.pop('import_filename', None)
 
     print(f"=== IMPORT COMPLETE ===")
-    print(f"Created: {results['assets_created']}, Updated: {results['assets_updated']}, Skipped: {results['assets_skipped']}, Errors: {len(results['errors'])}")
+    print(
+        f"Created: {results['assets_created']}, Updated: {results['assets_updated']}, Skipped: {results['assets_skipped']}, Errors: {len(results['errors'])}")
 
     return render_template('import_results.html', results=results)
 
