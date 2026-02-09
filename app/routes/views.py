@@ -110,6 +110,7 @@ def api_asset_detail(service_tag):
             'in_house': asset.in_house,
             'storage_location': asset.storage_location,
             'notes': getattr(asset, 'notes', None)
+            'custom_fields': asset.custom_fields or {}
         },
         'current_assignment': {
             'employee_id': current_assignment.employee_id,
