@@ -96,7 +96,7 @@ def upload_file():
     # ITAM fields that can be mapped
     itam_fields = [
         {'name': 'skip', 'label': '-- Skip this column --'},
-        {'name': 'custom_field', 'label': '✨ Keep as Custom Field'},  # ✅ NEW OPTION
+        {'name': 'custom_field', 'label': '✨ Keep as Custom Field'},
         {'name': 'service_tag', 'label': 'Service Tag (Required)', 'required': True},
         {'name': 'brand', 'label': 'Brand/Make'},
         {'name': 'model', 'label': 'Model'},
