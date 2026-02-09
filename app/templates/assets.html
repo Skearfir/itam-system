@@ -203,7 +203,13 @@
                             </div>
                         </div>
 
+                        <div class="detail-section full-width" id="custom-fields-section" style="display: none;">
+                            <h3>Additional Fields</h3>
+                            <div id="custom-fields-content"></div>
+                        </div>
+
                         <div class="detail-section full-width">
+
                             <h3>Notes</h3>
                             <div class="detail-row">
                                 <span id="detail-notes" class="detail-value"></span>
@@ -575,11 +581,28 @@ function populateModal(data) {
     document.getElementById('detail-purchase').textContent = asset.purchase_date || '—';
     document.getElementById('detail-notes').textContent = asset.notes || 'No notes';
 
+    const customFieldsSection = document.getElementById('custom-fields-section');
+    const customFieldsContent = document.getElementById('custom-fields-content');
+
+    if (asset.custom_fields && Object.keys(asset.custom_fields).length > 0) {
+        customFieldsSection.style.display = 'block';
+        customFieldsContent.innerHTML = Object.entries(asset.custom_fields)
+            .map(([key, value]) => `
+                <div class="detail-row">
+                    <label>${key}:</label>
+                    <span class="detail-value">${value}</span>
+                </div>
+            `).join('');
+    } else {
+        customFieldsSection.style.display = 'none';
+    }
+
     // Show/hide faulty substatus
     handleStatusChange();
 
     // Populate current assignment
     const assignmentContent = document.getElementById('current-assignment-content');
+
     if (data.current_assignment) {
         const a = data.current_assignment;
         assignmentContent.innerHTML = `
